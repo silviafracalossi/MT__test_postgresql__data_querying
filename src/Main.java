@@ -1,4 +1,3 @@
-import java.io.*;
 import java.sql.*;
 import java.util.Scanner;
 import java.util.logging.*;
@@ -41,6 +40,9 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 
+    // Instantiating the input scanner
+    Scanner sc = new Scanner(System.in);
+
     try {
 
       // Instantiate general logger
@@ -64,8 +66,13 @@ public class Main {
       general_logger.info("Connecting to the PostgreSQL database...");
       createDBConnection();
 
+      // Asking if the user is ready
+      System.out.print("\t\t==\"Ready Statement\"==\nConfirm the other test script, "+
+        "then come back here and press enter. ");
+      String response = sc.nextLine();
+
       // Marking start of tests
-      general_logger.info("Executing Queries");
+      general_logger.info("Starting queries execution");
 
       // Execute queries forever
       while (true) {
@@ -73,7 +80,8 @@ public class Main {
       }
 
     } catch(Exception e) {
-       e.printStackTrace();
+      System.out.println("PSQLException - You probably forgot to stop the script");
+      e.printStackTrace();
     } finally {
        try{
           if(pos_stmt!=null) pos_stmt.close();
@@ -91,11 +99,16 @@ public class Main {
   // Method that actually computes queries to the DB
   public static void doQueries () throws SQLException {
 
-    System.out.println("Ciao!");
+    ResultSet rs = pos_stmt.executeQuery("SELECT COUNT(*) FROM test_table");
+    while (rs.next())
+    {
+        System.out.println(rs.getString(1));
+    }
+    rs.close();
 
     // TODO: decomment
     // TODO: find meaningful queries
-    // TODO: implement and test queries when database is full 
+    // TODO: implement and test queries when database is full
 
     // query = "SELECT * FROM test_table;";
     //
