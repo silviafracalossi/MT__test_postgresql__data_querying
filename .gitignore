@@ -1,5 +1,6 @@
 
 build/*
+logs/*
 
 resources/postgresql-42.2.14.jar
 resources/server_postgresql_credentials.txt
