@@ -12,18 +12,15 @@ In the main directory, there is:
 -   `compile_and_run.bash`, a bash file containing the commands for compiling the java code and running it.
 
 ## Requirements
-
 -   PostgreSQL JDBC Driver (42.2.14)
 
 ## Installation and running the project
-
 -   Create the folder `build`;
 -   Create the folder `logs`;
 -   Inside the folder `resources`,
     -   Create a file called `server_postgresql_credentials.txt`, containing the username (first line) and the password (second line) to access the server PostgreSQL database;
     -   Copy-paste the indicated PostgreSQL driver (called `postgresql-42.2.14.jar`);
 -   `bash compile_and_run.bash`
-
 
 ## Preparing an executable jar file
 Since I couldn't manage to find a way with the command line, I used Eclipse:
@@ -46,7 +43,8 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
 -   Execute the JAR file:
     -   If you have this repository available:
         -   From the main directory, execute `java -jar standalone/DataQueryingTest.jar`.
-
+    -   If you need a proper standalone version:
+        -   Check the next paragraph.
 
 ## Preparing the standalone version on the server
 -   Connect to the unibz VPN through Cisco AnyConnect;
@@ -60,4 +58,4 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
     -   Execute `scp resources/logging.properties sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/standalone_query/resources`;
 -   Execute the JAR file (use the terminal connected through SSH):
     -   Execute `cd standalone_query`;
-    -   Execute `java -jar DataIngestionTest.jar`.
+    -   Execute `java -jar DataQueryingTest.jar`.
