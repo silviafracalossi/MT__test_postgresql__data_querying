@@ -99,30 +99,38 @@ public class Main {
   // Method that actually computes queries to the DB
   public static void doQueries () throws SQLException {
 
-    ResultSet rs = pos_stmt.executeQuery("SELECT COUNT(*) FROM test_table");
-    while (rs.next())
-    {
-        System.out.println(rs.getString(1));
+    String query;
+    ResultSet rs;
+
+    // Return the number of rows in the test table
+    query = "SELECT COUNT(*) FROM test_table";
+    rs = pos_stmt.executeQuery(query);
+    while (rs.next()) {
+      System.out.println("Count: " +rs.getString(1));
     }
     rs.close();
 
-    // TODO: decomment
-    // TODO: find meaningful queries
-    // TODO: implement and test queries when database is full
+    // Return the average temperature per hour, ordered and ranked by average,
+    //    highlighting if the timestamp belongs to the last 5 hours of records stored
+    // ROUND, AVG, RANK, CASE, MAX, WHERE, 2 TIMESTAMP difference, GROUP BY query
+    query = "SELECT time, ROUND(AVG(value),2) AS average,  "+
+            "RANK() OVER (ORDER BY AVG(value) DESC) AS ranking, " +
+            "CASE " +
+          	"	WHEN ((max_table.max_time - INTERVAL '5 hour') < time AND max_table.max_time > time ) THEN 'yes' " +
+          	"	WHEN ((max_table.max_time - INTERVAL '5 hour') > time AND max_table.max_time < time ) THEN 'no' " +
+          	"	ELSE 'undefined' " +
+          	" END as in_last_hour " +
+            "FROM test_table, ( " +
+		        "    SELECT MAX(time) AS max_time " +
+		        "    FROM test_table) max_table " +
+            "WHERE (max_table.max_time - INTERVAL '5 hour') < time " +
+            "    AND max_table.max_time > time " +
+            "GROUP BY time, in_last_hour " +
+            "ORDER BY ranking;";
 
-    // query = "SELECT * FROM test_table;";
-    //
-    // // Executing the query and checking the result
-    // try {
-    //   if (pos_stmt.executeUpdate(query) != 1) {
-    //       general_logger.severe("Problem executing the following script: \n"+query);
-    //   } else {
-    //       general_logger.info("Query successfully executed: \n"+query);
-    //   }
-    // } catch (SQLException e) {
-    //   general_logger.severe("Problem executing the following script: \n"+query);
-    //   e.printStackTrace();
-    // }
+    rs = pos_stmt.executeQuery(query);
+    System.out.println("Average temperature per hour and co., executed");
+    rs.close();
 
   }
 
