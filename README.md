@@ -48,8 +48,7 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
 
 ## Preparing the standalone version on the server
 -   Connect to the unibz VPN through Cisco AnyConnect;
--   Prepare the folders on the server:
-    -   Through SSH, access the server;
+-   Connect to the server through SSH and then:
     -   Execute `mkdir standalone_query`;
     -   Execute `mkdir standalone_query/resources`;
 -   Send the JAR and the help files from another terminal (not connected through SSH):
