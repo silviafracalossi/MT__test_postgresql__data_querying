@@ -11,7 +11,7 @@ import java.io.*;
 public class Main {
 
   // Defining which database to connect to
-  static final boolean useServerPostgresDB = false;
+  static boolean useServerPostgresDB = true;
   static final String DB_PREFIX = "jdbc:postgresql://";
 
   // LOCAL Configurations
@@ -48,6 +48,25 @@ public class Main {
       // Instantiate general logger
       general_logger = instantiateLogger("general");
 
+      // Understanding whether the user wants the sever db or the local db
+      String response = "";
+      boolean correct_answer = false;
+      while (!correct_answer) {
+        System.out.print("Where do you want the script to be executed?"
+        +" (Type \"s\" for server database,"
+        +" type \"l\" for local database)"
+        +" (usually, \"l\" is for script test purposes only): ");
+        response = sc.nextLine().replace(" ", "");
+
+        // Understanding what the user wants
+        if (response.compareTo("l") == 0 || response.compareTo("s") == 0) {
+          correct_answer=true;
+          if (response.compareTo("l") == 0) {
+            useServerPostgresDB = false;
+          }
+        }
+      }
+
       // Loading the credentials to the new postgresql database
       general_logger.info("Reading database credentials");
       try {
@@ -69,7 +88,7 @@ public class Main {
       // Asking if the user is ready
       System.out.print("\t\t==\"Ready Statement\"==\nConfirm the other test script, "+
         "then come back here and press enter. ");
-      String response = sc.nextLine();
+      response = sc.nextLine();
 
       // Marking start of tests
       general_logger.info("Starting queries execution");
