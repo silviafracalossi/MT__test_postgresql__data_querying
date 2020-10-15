@@ -48,7 +48,8 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
 
 ## Preparing the standalone version on the server
 -   Connect to the unibz VPN through Cisco AnyConnect;
--   Connect to the server through SSH and then:
+-   Open the terminal:
+    -   Execute `ssh -t sfracalossi@ironlady.inf.unibz.it "cd /data/sfracalossi ; bash"`;
     -   Execute `mkdir standalone_query`;
     -   Execute `mkdir standalone_query/resources`;
 -   Send the JAR and the help files from another terminal (not connected through SSH):
