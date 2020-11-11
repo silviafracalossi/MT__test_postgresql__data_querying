@@ -60,4 +60,4 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
     -   Execute `scp resources/logging.properties sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/postgresql/standalone_query/resources`;
 -   Execute the JAR file (use the terminal connected through SSH):
     -   Execute `cd postgresql/standalone_query`;
-    -   Execute `nohup java -jar DataQueryingTest.jar [l/s] [light/1GB] > logs/out.txt &`.
+    -   Execute `nohup java -jar DataQueryingTest.jar [l/s] > logs/out.txt &`.

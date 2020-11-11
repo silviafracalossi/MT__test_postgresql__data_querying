@@ -51,11 +51,10 @@ public class Main {
     try {
 
       // Getting information from user
-      if (args.length != 2) {
+      if (args.length != 1) {
           talkToUser();
       } else {
           useServerPostgresDB = (args[0].compareTo("s") == 0);
-          data_loaded = args[1];
       }
 
       // Instantiate general logger
@@ -88,15 +87,13 @@ public class Main {
       logger.info("Starting queries execution");
       try {
         allData_windowsAnalysis();
-        // lastTwoDays_timedMovingAverage();
-        // lastThirtyMinutes_avgMaxMin();
+        lastTwoDays_timedMovingAverage();
+        lastThirtyMinutes_avgMaxMin();
       } catch (SQLException e) {
         e.printStackTrace();
       }
 
-
     } catch(Exception e) {
-      System.out.println("PSQLException - You probably forgot to stop the script");
       e.printStackTrace();
     } finally {
        try{
@@ -187,95 +184,101 @@ public class Main {
 
   //-----------------------SECOND QUERY----------------------------------------------
 
-
-
-
   // RANGE BETWEEN '1 day' PRECEDING AND '10 days' FOLLOWING
-  //
-  // // Every 2 minutes of data, computes the average of the current temperature value
-  // //      and the ones of the previous 4 minutes on last 2 days of data
-  // public static void lastTwoDays_timedMovingAverage() {
-  //
-  //     // Printing method name
-  //     System.out.println("2) lastTwoDays_timedMovingAverage");
-  //
-  //     // Creating the query
-        // int year = (data_loaded.compareTo("1GB") == 0) ? 2009 : 2017;
-        // String start_two_days = year+"-12-03T00:00:00Z";
-        // String end_two_days = year+"-12-05T00:00:00Z";
-  //     String lastTwoDays_query = "" +
-  //             "from(bucket:\"" + bucket_name + "\")" +
-  //             " |> range(start: " + start_two_days + ", stop: " + end_two_days + ")" +
-  //             " |> filter(fn:(r) => " +
-  //             "       r._measurement == \"" + measurement + "\"" +
-  //             " )" +
-  //             " |> timedMovingAverage(every: 2m, period: 4m)";
-  //
-  //     // Executing the query
-  //     logger.info("Executing timedMovingAverage on LastTwoDays");
-  //     List<FluxTable> tables = queryApi.query(lastTwoDays_query);
-  //     logger.info("Completed execution");
-  //
-  //     // Printing the result
-  //     printSecondQuery(tables);
-  // }
-  //
-  // // Printing the results from the second query
-  // public static void printSecondQuery(List<FluxTable> tables) {
-  //
-  //     // Iterating through tables (in this case: only "temperature" table)
-  //     for (FluxTable fluxTable : tables) {
-  //         List<FluxRecord> records = fluxTable.getRecords();
-  //
-  //         // Iterating through all the rows
-  //         for (FluxRecord fluxRecord : records) {
-  //             double value = Double.parseDouble(fluxRecord.getValueByKey("_value") + "");
-  //             logger.info("Result: " + fluxRecord.getValueByKey("_time") + " " + df.format(value));
-  //         }
-  //     }
-  // }
-  //
-  // //-----------------------THIRD QUERY----------------------------------------------
-  // // 3. Calculate mean, max and min on last (arbitrary) 30 minutes of data
-  // public static void lastThirtyMinutes_avgMaxMin() {
-  //
-  //     // Printing method name
-  //     System.out.println("3) lastThirtyMinutes_avgMaxMin");
-  //
-  //     // Creating the query
-  //     int year = (data_loaded.compareTo("1GB") == 0) ? 2009 : 2017;
-  //     String start_thirty_minutes = year + "-12-01T11:00:00Z";
-  //     String end_thirty_minutes = year + "-12-01T11:30:00Z";
-  //     String lastThirtyMinutes_query = "" +
-  //             " SELECT MEAN(value), MAX(value), MIN(value) " +
-  //             " FROM " + measurement +
-  //             " WHERE time > '" + start_thirty_minutes + "' " +
-  //             "   AND time < '" + end_thirty_minutes + "' ";
-  //
-  //     // Executing the query
-  //     logger.info("Executing AvgMaxMin on LastThirtyMinutes");
-  //     QueryResult queryResult = influxDB.query(new Query(lastThirtyMinutes_query, dbName));
-  //     logger.info("Completed execution");
-  //
-  //     // Printing the result
-  //     printThirdQuery(queryResult, start_thirty_minutes, end_thirty_minutes);
-  // }
-  //
-  // // Printing the results from the third query
-  // public static void printThirdQuery(QueryResult qr, String start_thirty_minutes, String end_thirty_minutes) {
-  //
-  //     // Getting all the variables
-  //     List<List<Object>> values = qr.getResults().get(0).getSeries().get(0).getValues();
-  //
-  //     // Printing the result
-  //     logger.info("Result:" +
-  //             " From " + start_thirty_minutes +
-  //             " to " + end_thirty_minutes +
-  //             " AVG: " + df.format(values.get(0).get(1)) +
-  //             " Max: " + values.get(0).get(2) +
-  //             " Min: " + values.get(0).get(3));
-  //
-  // }
+  /*Every 2 minutes of data, computes the average of the current temperature value
+      and the ones of the previous 4 minutes on last 2 days of data*/
+  // SELECT time, value, AVG(value) OVER (
+  // 	    ORDER BY time
+  // 		RANGE BETWEEN '4 minutes' PRECEDING AND '0 minutes' FOLLOWING
+  // 	)
+  // FROM test_table_n,
+  // 	(SELECT MAX(time) AS max FROM test_table_n) tmp
+  // WHERE time >= (tmp.max - interval '2 days')
+
+
+  // 2. Every 2 minutes of data, computes the average of the current temperature value
+  //    and the ones of the previous 4 minutes on last 2 days of data
+  public static void lastTwoDays_timedMovingAverage() throws SQLException {
+
+    // Printing method name
+    System.out.println("2) lastTwoDays_timedMovingAverage");
+
+    // Creating the query
+    String lastTwoDays_query = " \n"+
+        " with t as ( \n"+
+        "    SELECT \n"+
+        "      generate_series(max_time - interval '2 days', max_time, '2 minutes') AS interv \n"+
+        "    FROM (SELECT date_trunc('hour', MAX(time) + interval '1 hour') AS max_time FROM test_table_n) a \n"+
+        " 	ORDER BY interv \n"+
+        " ) \n"+
+
+        " SELECT interv, ROUND(AVG(value), 2) \n"+
+        " FROM t \n"+
+        " LEFT JOIN test_table_n on \n"+
+        " 	(test_table_n.time <= t.interv AND test_table_n.time > (interv - interval '4 minutes')) \n"+
+        " GROUP BY interv;";
+
+    // Executing the query
+    logger.info("Executing timedMovingAverage on LastTwoDays");
+    ResultSet rs = pos_stmt.executeQuery(lastTwoDays_query);
+    logger.info("Completed execution");
+
+    // Printing the result
+    printSecondQuery(rs);
+  }
+
+  // Printing the results from the second query
+  public static void printSecondQuery(ResultSet rs) throws SQLException {
+
+    // Iterating through all the rows
+    while (rs.next()) {
+      logger.info("Result: " + rs.getString(1).replace(" ", "T") + "Z" +
+          " " + rs.getString(2));
+    }
+    // Closing the set
+    rs.close();
+  }
+
+  //-----------------------THIRD QUERY----------------------------------------------
+  // 3. Calculate mean, max and min on last (arbitrary) 30 minutes of data
+  public static void lastThirtyMinutes_avgMaxMin() throws SQLException {
+
+    // Printing method name
+    System.out.println("3) lastThirtyMinutes_avgMaxMin");
+
+    // Creating the query
+    String lastThirtyMinutes_query = "" +
+        " SELECT (max_time - interval '30 minutes') AS start_time, max_time AS end_time, "+
+        "   ROUND(AVG(value), 2) AS avg, MAX(value), MIN(value) "+
+        " FROM test_table_n, "+
+      	"   (SELECT date_trunc('minute', MAX(time) + interval '1 minute') as max_time FROM test_table_n) t "+
+        " WHERE time <= max_time AND time > (max_time - interval '30 minutes') "+
+        " GROUP BY start_time, end_time; ";
+
+    // Executing the query
+    logger.info("Executing AvgMaxMin on LastThirtyMinutes");
+    ResultSet rs = pos_stmt.executeQuery(lastThirtyMinutes_query);
+    logger.info("Completed execution");
+
+    // Printing the result
+    printThirdQuery(rs);
+  }
+
+  // Printing the results from the third query
+  public static void printThirdQuery(ResultSet rs) throws SQLException {
+
+    // Iterating through all the rows
+    while (rs.next()) {
+      logger.info("Result:" +
+          " From " + rs.getString(1).replace(" ", "T") + "Z" +
+          " to " + rs.getString(2).replace(" ", "T") + "Z" +
+          " AVG: " + rs.getString(3) +
+          " Max: " +rs.getString(4) +
+          " Min: " + rs.getString(5));
+    }
+    // Closing the set
+    rs.close();
+  }
 
   //-----------------------UTILITY----------------------------------------------
 
@@ -299,13 +302,6 @@ public class Main {
         } else {
           response = "";
         }
-    }
-
-    // Understanding what the index configured
-    while (data_loaded.compareTo("1GB") != 0 && data_loaded.compareTo("light") != 0) {
-        System.out.print("What data is uploaded?"
-                + " (Type \"1GB\" or \"light\"): ");
-        data_loaded = sc.nextLine().replace(" ", "");
     }
   }
 
