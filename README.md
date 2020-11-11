@@ -5,8 +5,9 @@ Tester of the Postgresql ability of querying speed on series data
 ## Repository Structure
 -   `build/`, containing the generated .class files after compiling the java code;
 -   `logs/`, containing the log information of the queries executed;
--   `resources/`, containing the postgresql driver, the database credentials file and the logger properties;
--   `src/`, containing the java source files.
+-   `resources/`, containing the PostgreSQL driver, the database credentials file and the logger properties;
+-   `src/`, containing the java source files;
+-   `standalone/`, containing the JAR standalone version of this repository.
 
 In the main directory, there is:
 -   `compile_and_run.bash`, a bash file containing the commands for compiling the java code and running it.
@@ -50,12 +51,13 @@ Since I couldn't manage to find a way with the command line, I used Eclipse:
 -   Connect to the unibz VPN through Cisco AnyConnect;
 -   Open the terminal:
     -   Execute `ssh -t sfracalossi@ironlady.inf.unibz.it "cd /data/sfracalossi ; bash"`;
-    -   Execute `mkdir standalone_query`;
-    -   Execute `mkdir standalone_query/resources`;
+    -   Execute `mkdir postgresql`;
+    -   Execute `mkdir postgresql/standalone_query`;
+    -   Execute `mkdir postgresql/standalone_query/resources`;
 -   Send the JAR and the help files from another terminal (not connected through SSH):
-    -   Execute `scp standalone/DataQueryingTest.jar sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/standalone_query`;
-    -   Execute `scp resources/server_postgresql_credentials.txt sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/standalone_query/resources`;
-    -   Execute `scp resources/logging.properties sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/standalone_query/resources`;
+    -   Execute `scp standalone/DataQueryingTest.jar sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/postgresql/standalone_query`;
+    -   Execute `scp resources/server_postgresql_credentials.txt sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/postgresql/standalone_query/resources`;
+    -   Execute `scp resources/logging.properties sfracalossi@ironlady.inf.unibz.it:/data/sfracalossi/postgresql/standalone_query/resources`;
 -   Execute the JAR file (use the terminal connected through SSH):
-    -   Execute `cd standalone_query`;
-    -   Execute `java -jar DataQueryingTest.jar`.
+    -   Execute `cd postgresql/standalone_query`;
+    -   Execute `nohup java -jar DataQueryingTest.jar [l/s] [light/1GB] > logs/out.txt &`.
