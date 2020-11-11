@@ -13,7 +13,7 @@ public class Main {
   static boolean useServerPostgresDB = true;
   static final String DB_PREFIX = "jdbc:postgresql://";
   static final String DB_TABLE_NAME = "test_table_n";
-
+  
   // LOCAL Configurations
   static final String local_DB_HOST = "localhost";
   static final String local_DB_NAME = "thesis_data_ingestion";
@@ -55,7 +55,7 @@ public class Main {
           talkToUser();
       } else {
           useServerPostgresDB = (args[0].compareTo("s") == 0);
-          data_loaded = args[2];
+          data_loaded = args[1];
       }
 
       // Instantiate general logger
