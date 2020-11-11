@@ -13,7 +13,7 @@ public class Main {
   static boolean useServerPostgresDB = true;
   static final String DB_PREFIX = "jdbc:postgresql://";
   static final String DB_TABLE_NAME = "test_table_n";
-  
+
   // LOCAL Configurations
   static final String local_DB_HOST = "localhost";
   static final String local_DB_NAME = "thesis_data_ingestion";
@@ -146,18 +146,18 @@ public class Main {
     String window_size = "30 minutes";
     String allData_query = ""+
       " with t as ( \n"+
-      "   select \n"+
-      "     generate_series(date_trunc('hour', min_time),max_time,'"+window_size+"') as interv \n"+
-      "     from (select min(time) as min_time, max(time) as max_time from "+DB_TABLE_NAME+") a \n"+
+      "   SELECT \n"+
+      "     generate_series(date_trunc('hour', min_time), max_time, '"+window_size+"') AS interv \n"+
+      "   FROM (SELECT MIN(time) as min_time, MAX(time) as max_time FROM "+DB_TABLE_NAME+") a \n"+
       " ) \n"+
-      " select interv as start_time, (interv + interval '"+window_size+"') as end_time, \n"+
-      "   ROUND(AVG(value),2) as avg, max(value) as max, min(value) as min \n"+
-      " from t \n"+
-      "	  left join "+DB_TABLE_NAME+" on "+
-      "     ("+DB_TABLE_NAME+".time > t.interv and "+
+      " SELECT interv as start_time, (interv + interval '"+window_size+"') AS end_time, \n"+
+      "   ROUND(AVG(value),2) as avg, MAX(value) AS max, MIN(value) AS min \n"+
+      " FROM t \n"+
+      "	  LEFT JOIN "+DB_TABLE_NAME+" on "+
+      "     ("+DB_TABLE_NAME+".time > t.interv AND "+
       "     "+DB_TABLE_NAME+".time <= (interv + interval '"+window_size+"')) \n"+
-      " group by start_time, end_time \n"+
-      " order by start_time;";
+      " GROUP BY start_time, end_time \n"+
+      " ORDER BY start_time;";
 
     // Executing the query
     logger.info("Executing windowsAnalysis on AllData");
@@ -186,6 +186,10 @@ public class Main {
 
 
   //-----------------------SECOND QUERY----------------------------------------------
+
+
+
+
   // RANGE BETWEEN '1 day' PRECEDING AND '10 days' FOLLOWING
   //
   // // Every 2 minutes of data, computes the average of the current temperature value
