@@ -12,7 +12,7 @@ public class Main {
   // Defining which database to connect to
   static boolean useServerPostgresDB = true;
   static final String DB_PREFIX = "jdbc:postgresql://";
-  static final String DB_TABLE_NAME = "test_table_n";
+  static String DB_TABLE_NAME = "";
 
   // LOCAL Configurations
   static final String local_DB_HOST = "localhost";
@@ -39,9 +39,9 @@ public class Main {
 
   // Information about data
   static String data_loaded = "";
+  static String[] index_types = {"no", "timestamp", "timestamp_and_value"};
+  static String max, min;
 
-
-  // TODO: create methods to change the indexes directly from this script
 
 	public static void main(String[] args) throws IOException {
 
@@ -51,10 +51,11 @@ public class Main {
     try {
 
       // Getting information from user
-      if (args.length != 1) {
+      if (args.length != 2) {
           talkToUser();
       } else {
           useServerPostgresDB = (args[0].compareTo("s") == 0);
+          DB_TABLE_NAME = args[1];
       }
 
       // Instantiate general logger
@@ -80,17 +81,30 @@ public class Main {
       logger.info("Connecting to the PostgreSQL database...");
       createDBConnection();
 
-      // Counting the number of rows inserted
+      // Counting the number of rows inserted and min/max time
       getDBCount();
+      getMaxMin();
 
       // Marking start of tests
       logger.info("Starting queries execution");
-      try {
-        allData_windowsAnalysis();
-        lastTwoDays_timedMovingAverage();
-        lastThirtyMinutes_avgMaxMin();
-      } catch (SQLException e) {
-        e.printStackTrace();
+
+      // Iterating through the different indexes
+      Index index = new Index(pos_conn, pos_stmt, DB_TABLE_NAME);
+      for (int index_no=0; index_no<index_types.length; index_no++) {
+
+        // Printing the index name
+        String index_appl_response = index.applyIndex(index_no);
+        System.out.println(index_appl_response);
+        logger.info("Index: " + index_types[index_no]);
+
+        // Executing the queries
+        try {
+          lastThirtyMinutes_avgMaxMin();
+          lastTwoDays_timedMovingAverage();
+          allData_windowsAnalysis();
+        } catch (SQLException e) {
+          e.printStackTrace();
+        }
       }
 
     } catch(Exception e) {
@@ -131,6 +145,32 @@ public class Main {
     rs.close();
   }
 
+  // 0. Max and Min
+  public static void getMaxMin() throws SQLException {
+
+    // Printing method name
+    logger.info("==0. Max and Min==");
+
+    // Creating the query
+    String count_query = "SELECT MIN(time), MAX(time) FROM "+DB_TABLE_NAME;
+
+    // Executing the query
+    ResultSet rs = pos_stmt.executeQuery(count_query);
+
+    // Printing the result
+    while (rs.next()) {
+      min = rs.getString(1);
+      max = rs.getString(2);
+    }
+
+    // Printing retrieved data
+    logger.info("Result: Min: " +min+ " and max: "+max);
+    System.out.println("Min: " +min+ " and max: "+max);
+
+    // Closing the set
+    rs.close();
+  }
+
   //-----------------------FIRST QUERY----------------------------------------------
 
   // For windows of 30 minutes, calculate mean, max and min.
@@ -145,7 +185,7 @@ public class Main {
       " with t as ( \n"+
       "   SELECT \n"+
       "     generate_series(date_trunc('hour', min_time), max_time, '"+window_size+"') AS interv \n"+
-      "   FROM (SELECT MIN(time) as min_time, MAX(time) as max_time FROM "+DB_TABLE_NAME+") a \n"+
+      "     FROM (SELECT '"+min+"'::timestamp as min_time, '"+max+"'::timestamp as max_time) a "+
       " ) \n"+
       " SELECT interv as start_time, (interv + interval '"+window_size+"') AS end_time, \n"+
       "   ROUND(AVG(value),2) as avg, MAX(value) AS max, MIN(value) AS min \n"+
@@ -208,15 +248,16 @@ public class Main {
     String lastTwoDays_query = " \n"+
         " with t as ( \n"+
         "    SELECT \n"+
-        "      generate_series(max_time - interval '2 days', max_time, '2 minutes') AS interv \n"+
-        "    FROM (SELECT date_trunc('hour', MAX(time) + interval '1 hour') AS max_time FROM test_table_n) a \n"+
+        "      generate_series(max_time - interval '2 days', max_time, "+
+        "          '2 minutes') AS interv \n"+
+        "     FROM (SELECT '"+max+"'::timestamp as max_time) a \n"+
         " 	ORDER BY interv \n"+
         " ) \n"+
 
         " SELECT interv, ROUND(AVG(value), 2) \n"+
         " FROM t \n"+
-        " LEFT JOIN test_table_n on \n"+
-        " 	(test_table_n.time <= t.interv AND test_table_n.time > (interv - interval '4 minutes')) \n"+
+        " LEFT JOIN "+DB_TABLE_NAME+" on \n"+
+        " 	("+DB_TABLE_NAME+".time <= t.interv AND "+DB_TABLE_NAME+".time > (interv - interval '4 minutes')) \n"+
         " GROUP BY interv;";
 
     // Executing the query
@@ -251,8 +292,8 @@ public class Main {
     String lastThirtyMinutes_query = "" +
         " SELECT (max_time - interval '30 minutes') AS start_time, max_time AS end_time, "+
         "   ROUND(AVG(value), 2) AS avg, MAX(value), MIN(value) "+
-        " FROM test_table_n, "+
-      	"   (SELECT date_trunc('minute', MAX(time) + interval '1 minute') as max_time FROM test_table_n) t "+
+        " FROM "+DB_TABLE_NAME+", "+
+      	"   (SELECT date_trunc('minute', '"+max+"'::timestamp + interval '1 minute') as max_time) t "+
         " WHERE time <= max_time AND time > (max_time - interval '30 minutes') "+
         " GROUP BY start_time, end_time; ";
 
@@ -303,6 +344,13 @@ public class Main {
         } else {
           response = "";
         }
+    }
+
+    // Understanding the DB table
+    while (DB_TABLE_NAME.compareTo("test_table") != 0 && DB_TABLE_NAME.compareTo("test_table_n") != 0) {
+        System.out.print("What is the name of the database?"
+                + " (Type \"test_table\" or \"test_table_n\"): ");
+        DB_TABLE_NAME = sc.nextLine().replace(" ", "");
     }
   }
 
