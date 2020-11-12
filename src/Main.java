@@ -177,6 +177,7 @@ public class Main {
           " Max: " +rs.getString(4) +
           " Min: " + rs.getString(5));
     }
+
     // Closing the set
     rs.close();
   }
