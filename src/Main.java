@@ -181,20 +181,19 @@ public class Main {
 
     // Creating the query
     String window_size = "30 minutes";
+
     String allData_query = ""+
-      " with t as ( \n"+
-      "   SELECT \n"+
-      "     generate_series(date_trunc('hour', min_time), max_time, '"+window_size+"') AS interv \n"+
-      "     FROM (SELECT '"+min+"'::timestamp as min_time, '"+max+"'::timestamp as max_time) a "+
+      " WITH t AS ( \n"+
+      "   SELECT date_trunc('hour', hour_trunc_t) as hour_trunc, minute_part \n"+
+      "   FROM generate_series('"+min+"'::timestamp, '"+max+"'::timestamp, '1 hour') AS hour_trunc_t,  \n"+
+      "        generate_series(0, 1) AS minute_part \n"+
       " ) \n"+
-      " SELECT interv as start_time, (interv + interval '"+window_size+"') AS end_time, \n"+
-      "   ROUND(AVG(value),2) as avg, MAX(value) AS max, MIN(value) AS min \n"+
+
+      " SELECT hour_trunc, minute_part, ROUND(AVG(value),2), MAX(value), MIN(value) \n"+
       " FROM t \n"+
-      "	  LEFT JOIN "+DB_TABLE_NAME+" on "+
-      "     ("+DB_TABLE_NAME+".time > t.interv AND "+
-      "     "+DB_TABLE_NAME+".time <= (interv + interval '"+window_size+"')) \n"+
-      " GROUP BY start_time, end_time \n"+
-      " ORDER BY start_time;";
+      " LEFT OUTER JOIN "+DB_TABLE_NAME+" ON date_trunc('hour', "+DB_TABLE_NAME+".time) = t.hour_trunc  \n"+
+      "     AND FLOOR((EXTRACT(minutes FROM time) / 30))::int = minute_part \n"+
+      " GROUP BY hour_trunc, minute_part";
 
     // Executing the query
     logger.info("Executing windowsAnalysis on AllData");
@@ -224,19 +223,6 @@ public class Main {
 
 
   //-----------------------SECOND QUERY----------------------------------------------
-
-  // RANGE BETWEEN '1 day' PRECEDING AND '10 days' FOLLOWING
-  /*Every 2 minutes of data, computes the average of the current temperature value
-      and the ones of the previous 4 minutes on last 2 days of data*/
-  // SELECT time, value, AVG(value) OVER (
-  // 	    ORDER BY time
-  // 		RANGE BETWEEN '4 minutes' PRECEDING AND '0 minutes' FOLLOWING
-  // 	)
-  // FROM test_table_n,
-  // 	(SELECT MAX(time) AS max FROM test_table_n) tmp
-  // WHERE time >= (tmp.max - interval '2 days')
-
-
   // 2. Every 2 minutes of data, computes the average of the current temperature value
   //    and the ones of the previous 4 minutes on last 2 days of data
   public static void lastTwoDays_timedMovingAverage() throws SQLException {
@@ -244,21 +230,20 @@ public class Main {
     // Printing method name
     System.out.println("2) lastTwoDays_timedMovingAverage");
 
-    // Creating the query
-    String lastTwoDays_query = " \n"+
-        " with t as ( \n"+
-        "    SELECT \n"+
-        "      generate_series(max_time - interval '2 days', max_time, "+
-        "          '2 minutes') AS interv \n"+
-        "     FROM (SELECT '"+max+"'::timestamp as max_time) a \n"+
-        " 	ORDER BY interv \n"+
-        " ) \n"+
+    String lastTwoDays_query = "\n"+
+      " WITH t AS ( \n"+
+      " SELECT date_trunc('hour', hour_trunc_t) as hour_trunc, minute_part \n"+
+      " FROM generate_series( \n"+
+      "	 	date_trunc('hour', '2017-12-04 23:59:57'::timestamp + interval '1 hour') - interval '2 days', \n"+
+      "	 	date_trunc('hour', '2017-12-04 23:59:57'::timestamp + interval '1 hour'), \n"+
+      "	 	'1 hour') AS hour_trunc_t, \n"+
+      "	  generate_series(0, 29) AS minute_part \n"+
+      ") \n"+
 
-        " SELECT interv, ROUND(AVG(value), 2) \n"+
-        " FROM t \n"+
-        " LEFT JOIN "+DB_TABLE_NAME+" on \n"+
-        " 	("+DB_TABLE_NAME+".time <= t.interv AND "+DB_TABLE_NAME+".time > (interv - interval '4 minutes')) \n"+
-        " GROUP BY interv;";
+      " SELECT hour_trunc, (minute_part*2) as min, ROUND(AVG(AVG(value)) OVER (ORDER BY hour_trunc, minute_part ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) as AVG \n"+
+      " FROM t \n"+
+      "   LEFT OUTER JOIN test_table_n ON date_trunc('hour', test_table_n.time) = t.hour_trunc AND (EXTRACT(minutes FROM time) / 2)::int = minute_part \n"+
+      " GROUP BY hour_trunc, minute_part";
 
     // Executing the query
     logger.info("Executing timedMovingAverage on LastTwoDays");
@@ -274,8 +259,8 @@ public class Main {
 
     // Iterating through all the rows
     while (rs.next()) {
-      logger.info("Result: " + rs.getString(1).replace(" ", "T") + "Z" +
-          " " + rs.getString(2));
+      logger.info("Result: " + rs.getString(1).replace(" ", "T") + "Z__"+rs.getString(2) +
+          " " + rs.getString(3));
     }
     // Closing the set
     rs.close();
