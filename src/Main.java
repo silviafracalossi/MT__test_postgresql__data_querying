@@ -279,7 +279,7 @@ public class Main {
         "   ROUND(AVG(value), 2) AS avg, MAX(value), MIN(value) "+
         " FROM "+DB_TABLE_NAME+", "+
       	"   (SELECT date_trunc('minute', '"+max+"'::timestamp + interval '1 minute') as max_time) t "+
-        " WHERE time <= max_time AND time > (max_time - interval '30 minutes') "+
+        " WHERE time > (max_time - interval '30 minutes') "+
         " GROUP BY start_time, end_time; ";
 
     // Executing the query

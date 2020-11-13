@@ -21,7 +21,7 @@ In the main directory, there is:
 -   Inside the folder `resources`,
     -   Create a file called `server_postgresql_credentials.txt`, containing the username (first line) and the password (second line) to access the server PostgreSQL database;
     -   Copy-paste the indicated PostgreSQL driver (called `postgresql-42.2.14.jar`);
--   `bash compile_and_run.bash`
+-   Execute `bash compile_and_run.bash`
 
 ## Preparing an executable jar file
 Since I couldn't manage to find a way with the command line, I used Eclipse:
