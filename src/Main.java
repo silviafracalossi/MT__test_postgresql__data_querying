@@ -234,15 +234,15 @@ public class Main {
       " WITH t AS ( \n"+
       " SELECT date_trunc('hour', hour_trunc_t) as hour_trunc, minute_part \n"+
       " FROM generate_series( \n"+
-      "	 	date_trunc('hour', '2017-12-04 23:59:57'::timestamp + interval '1 hour') - interval '2 days', \n"+
-      "	 	date_trunc('hour', '2017-12-04 23:59:57'::timestamp + interval '1 hour'), \n"+
+      "	 	date_trunc('hour', '"+max+"'::timestamp + interval '1 hour') - interval '2 days', \n"+
+      "	 	date_trunc('hour', '"+max+"'::timestamp + interval '1 hour'), \n"+
       "	 	'1 hour') AS hour_trunc_t, \n"+
       "	  generate_series(0, 29) AS minute_part \n"+
       ") \n"+
 
       " SELECT hour_trunc, (minute_part*2) as min, ROUND(AVG(AVG(value)) OVER (ORDER BY hour_trunc, minute_part ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2) as AVG \n"+
       " FROM t \n"+
-      "   LEFT OUTER JOIN test_table_n ON date_trunc('hour', test_table_n.time) = t.hour_trunc AND (EXTRACT(minutes FROM time) / 2)::int = minute_part \n"+
+      "   LEFT OUTER JOIN "+DB_TABLE_NAME+" ON date_trunc('hour', "+DB_TABLE_NAME+".time) = t.hour_trunc AND (EXTRACT(minutes FROM time) / 2)::int = minute_part \n"+
       " GROUP BY hour_trunc, minute_part";
 
     // Executing the query
