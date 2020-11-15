@@ -43,7 +43,7 @@ public class Main {
   static String max, min;
 
 
-	public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException {
 
     // Instantiating the input scanner
     Scanner sc = new Scanner(System.in);
